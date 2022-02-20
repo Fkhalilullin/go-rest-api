@@ -16,12 +16,7 @@ func main() {
 	l := log.New(os.Stdout, "products-api ", log.LstdFlags)
 
 	router := mux.NewRouter()
-	// //Init handlers
-	// router.HandleFunc("/books", controllers.GetBooks(l)).Methods("GET")
-	// router.HandleFunc("/books", controllers.AddBook(l)).Methods("POST")
-	// // router.HandleFunc("/books/{id}", controllers.GetBook(db)).Methods("GET")
-	// router.HandleFunc("/books/{id}", controllers.UpdateBook(l)).Methods("PUT")
-	// // router.HandleFunc("/books/{id}", controllers.DeleteBook(db)).Methods("DELETE")
+
 	getRouter := router.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/books", controllers.GetBooks(l))
 
@@ -34,12 +29,12 @@ func main() {
 	postRouter.Use(controllers.MiddlewareValidateBook)
 
 	s := http.Server{
-		Addr:         ":9090",           // configure the bind address
-		Handler:      router,            // set the default handler
-		ErrorLog:     l,                 // set the logger for the server
-		ReadTimeout:  5 * time.Second,   // max time to read request from the client
-		WriteTimeout: 10 * time.Second,  // max time to write response to the client
-		IdleTimeout:  120 * time.Second, // max time for connections using TCP Keep-Alive
+		Addr:         ":9090",           
+		Handler:      router,            
+		ErrorLog:     l,                 
+		ReadTimeout:  5 * time.Second,  
+		WriteTimeout: 10 * time.Second, 
+		IdleTimeout:  120 * time.Second, 
 	}
 
 	go func() {

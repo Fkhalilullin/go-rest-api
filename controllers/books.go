@@ -68,7 +68,6 @@ func MiddlewareValidateBook(next http.Handler) http.Handler {
 			return
 		}
 
-		// add the Book to the context
 		ctx := context.WithValue(r.Context(), KeyBook{}, book)
 		r = r.WithContext(ctx)
 
