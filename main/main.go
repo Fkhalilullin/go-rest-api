@@ -9,14 +9,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Fkhalilullin/go-library-api/handlers"
+	"github.com/Fkhalilullin/go-library-api/controllers"
 )
 
 func main() {
 
 	l := log.New(os.Stdout, "go-library-api ", log.LstdFlags)
 
-	ph := handlers.NewProducts(l)
+	ph := controllers.NewProducts(l)
 
 	sm := http.NewServeMux()
 	sm.Handle("/", ph)
