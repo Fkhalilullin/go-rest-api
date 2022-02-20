@@ -39,7 +39,7 @@ func UpdateBook(l *log.Logger) http.HandlerFunc {
 			http.Error(w, "Unable to convert id", http.StatusBadRequest)
 			return
 		}
-		
+
 		l.Println("Handle PUT Book", id)
 		book := r.Context().Value(KeyBook{}).(models.Book)
 
@@ -62,7 +62,7 @@ func MiddlewareValidateBook(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		book := models.Book{}
 
-		err := json.NewDecoder(r.Body).Decode(book)
+		err := book.FromJSON(r.Body)
 		if err != nil {
 			http.Error(w, "Error reading Book", http.StatusBadRequest)
 			return

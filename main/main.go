@@ -16,12 +16,22 @@ func main() {
 	l := log.New(os.Stdout, "products-api ", log.LstdFlags)
 
 	router := mux.NewRouter()
-	//Init handlers
-	router.HandleFunc("/books", controllers.GetBooks(l)).Methods("GET")
-	router.HandleFunc("/books", controllers.AddBook(l)).Methods("POST")
-	// router.HandleFunc("/books/{id}", controllers.GetBook(db)).Methods("GET")
-	router.HandleFunc("/books/{id}", controllers.UpdateBook(l)).Methods("PUT")
-	// router.HandleFunc("/books/{id}", controllers.DeleteBook(db)).Methods("DELETE")
+	// //Init handlers
+	// router.HandleFunc("/books", controllers.GetBooks(l)).Methods("GET")
+	// router.HandleFunc("/books", controllers.AddBook(l)).Methods("POST")
+	// // router.HandleFunc("/books/{id}", controllers.GetBook(db)).Methods("GET")
+	// router.HandleFunc("/books/{id}", controllers.UpdateBook(l)).Methods("PUT")
+	// // router.HandleFunc("/books/{id}", controllers.DeleteBook(db)).Methods("DELETE")
+	getRouter := router.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/books", controllers.GetBooks(l))
+
+	putRouter := router.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/books/{id:[0-9]+}", controllers.UpdateBook(l))
+	putRouter.Use(controllers.MiddlewareValidateBook)
+
+	postRouter := router.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/books", controllers.AddBook(l))
+	postRouter.Use(controllers.MiddlewareValidateBook)
 
 	s := http.Server{
 		Addr:         ":9090",           // configure the bind address
