@@ -6,86 +6,37 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Fkhalilullin/go-library-api/controllers"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
-
-// import (
-// 	"context"
-// 	"log"
-// 	"net/http"
-// 	"os"
-// 	"os/signal"
-// 	"syscall"
-// 	"time"
-
-// 	"github.com/Fkhalilullin/go-library-api/controllers"
-// )
-
-// func main() {
-
-// 	l := log.New(os.Stdout, "go-library-api ", log.LstdFlags)
-
-// 	// ph := controllers.NewProducts(l)
-// 	ph := controllers.NewProducts(l)
-
-// 	sm := http.NewServeMux()
-// 	sm.Handle("/", ph)
-
-// 	s := http.Server{
-// 		Addr:         ":9090",
-// 		Handler:      sm,
-// 		ErrorLog:     l,
-// 		ReadTimeout:  5 * time.Second,
-// 		WriteTimeout: 10 * time.Second,
-// 		IdleTimeout:  120 * time.Second,
-// 	}
-
-// 	go func() {
-// 		l.Println("Starting server on port 9090")
-
-// 		err := s.ListenAndServe()
-// 		if err != nil {
-// 			l.Printf("Error starting server: %s\n", err)
-// 			os.Exit(1)
-// 		}
-// 	}()
-
-// 	c := make(chan os.Signal, 1)
-// 	signal.Notify(c, os.Interrupt)
-// 	signal.Notify(c, syscall.SIGTERM)
-
-// 	sig := <-c
-// 	log.Println("Got signal:", sig)
-
-// 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-// 	s.Shutdown(ctx)
-// }
 
 func main() {
 
 	//Init database
-	db, err := sql.Open("mysql", "root:@/books")
+	db, err := sql.Open("mysql", "admin:admin@tcp(127.0.0.1:3306)/books")
 	if err != nil {
 		fmt.Println("Database is not created")
 		os.Exit(1)
 	}
+	fmt.Println("Database is created")
 	defer db.Close()
-
+	//ping bd
 	//Init the router
 	router := mux.NewRouter()
 
 	//Init handlers
-	router.HandleFunc("/books", GetBooks).Methods("GET")
-	// router.HandleFunc("/books", CreateBook).Methods("POST")
-	// router.HandleFunc("/books/{id}", GetBook).Methods("GET")
-	// router.HandleFunc("/books/{id}", UpdateBook).Methods("PUT")
-	// router.HandleFunc("/books/{id}", DeleteBook).Methods("DELETE")
+	router.HandleFunc("/books", controllers.GetBooks(db)).Methods("GET")
+	router.HandleFunc("/books", controllers.CreateBook(db)).Methods("POST")
+	router.HandleFunc("/books/{id}", controllers.GetBook(db)).Methods("GET")
+	router.HandleFunc("/books/{id}", controllers.UpdateBook(db)).Methods("PUT")
+	router.HandleFunc("/books/{id}", controllers.DeleteBook(db)).Methods("DELETE")
 
 	//Listen and serve server
+	fmt.Println("Server is starting")
 	err = http.ListenAndServe(":9090", router)
 	if err != nil {
 		fmt.Println("Error starting server")
 		os.Exit(1)
 	}
-
 }
