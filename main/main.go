@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/Fkhalilullin/go-library-api/controllers"
 	_ "github.com/go-sql-driver/mysql"
@@ -14,10 +13,9 @@ import (
 func main() {
 
 	//Init database
-	db, err := sql.Open("mysql", "admin:admin@tcp(127.0.0.1:3306)/books")
+	db, err := sql.Open("mysql", "admin:admin@tcp(localhost:3306)/books")
 	if err != nil {
-		fmt.Println("Database is not created")
-		os.Exit(1)
+		panic(err.Error())
 	}
 	fmt.Println("Database is created")
 	defer db.Close()
@@ -34,9 +32,8 @@ func main() {
 
 	//Listen and serve server
 	fmt.Println("Server is starting")
-	err = http.ListenAndServe(":9090", router)
+	err = http.ListenAndServe(":8000", router)
 	if err != nil {
-		fmt.Println("Error starting server")
-		os.Exit(1)
+		panic(err.Error())
 	}
 }
