@@ -1,44 +1,77 @@
 package controllers
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/Fkhalilullin/go-library-api/models"
+	"github.com/gorilla/mux"
 )
 
-func GetBooks(db *sql.DB) http.HandlerFunc {
+func GetBooks(l *log.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Comtent-Type", "application/json")
+		l.Println("Handle GET Book")
+		lb := models.GetBooks()
 
-		ret := models.NewBooks(db)
-		if err := ret.GetAll(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		err := json.NewEncoder(w).Encode(lb)
+		if err != nil {
+			http.Error(w, "Unable to marshal json", http.StatusBadRequest)
+		}
+	}
+}
+
+func AddBook(l *log.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l.Println("Handle POST Book")
+		book := r.Context().Value(KeyBook{}).(models.Book)
+		models.AddBook(&book)
+	}
+}
+
+func UpdateBook(l *log.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		id, err := strconv.Atoi(vars["id"])
+		if err != nil {
+			http.Error(w, "Unable to convert id", http.StatusBadRequest)
 			return
 		}
-		json.NewEncoder(w).Encode(ret)
+		
+		l.Println("Handle PUT Book", id)
+		book := r.Context().Value(KeyBook{}).(models.Book)
+
+		err = models.UpdateBook(id, &book)
+		if err == models.ErrBookNotFound {
+			http.Error(w, "Book not found", http.StatusNotFound)
+			return
+		}
+
+		if err != nil {
+			http.Error(w, "Book not found", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
-func GetBook(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+type KeyBook struct{}
 
-	}
-}
-func CreateBook(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func MiddlewareValidateBook(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		book := models.Book{}
 
-	}
-}
-func UpdateBook(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+		err := json.NewDecoder(r.Body).Decode(book)
+		if err != nil {
+			http.Error(w, "Error reading Book", http.StatusBadRequest)
+			return
+		}
 
-	}
-}
+		// add the Book to the context
+		ctx := context.WithValue(r.Context(), KeyBook{}, book)
+		r = r.WithContext(ctx)
 
-func DeleteBook(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-	}
+		next.ServeHTTP(w, r)
+	})
 }

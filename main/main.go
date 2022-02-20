@@ -1,39 +1,51 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/Fkhalilullin/go-library-api/controllers"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
 func main() {
 
-	//Init database
-	db, err := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/books")
-	if err != nil {
-		panic(err.Error())
-	}
-	fmt.Println("Database is created")
-	defer db.Close()
-	//ping bd
-	//Init the router
+	l := log.New(os.Stdout, "products-api ", log.LstdFlags)
+
 	router := mux.NewRouter()
-
 	//Init handlers
-	router.HandleFunc("/books", controllers.GetBooks(db)).Methods("GET")
-	router.HandleFunc("/books", controllers.CreateBook(db)).Methods("POST")
-	router.HandleFunc("/books/{id}", controllers.GetBook(db)).Methods("GET")
-	router.HandleFunc("/books/{id}", controllers.UpdateBook(db)).Methods("PUT")
-	router.HandleFunc("/books/{id}", controllers.DeleteBook(db)).Methods("DELETE")
+	router.HandleFunc("/books", controllers.GetBooks(l)).Methods("GET")
+	router.HandleFunc("/books", controllers.AddBook(l)).Methods("POST")
+	// router.HandleFunc("/books/{id}", controllers.GetBook(db)).Methods("GET")
+	router.HandleFunc("/books/{id}", controllers.UpdateBook(l)).Methods("PUT")
+	// router.HandleFunc("/books/{id}", controllers.DeleteBook(db)).Methods("DELETE")
 
-	//Listen and serve server
-	fmt.Println("Server is starting")
-	err = http.ListenAndServe(":8000", router)
-	if err != nil {
-		panic(err.Error())
+	s := http.Server{
+		Addr:         ":9090",           // configure the bind address
+		Handler:      router,            // set the default handler
+		ErrorLog:     l,                 // set the logger for the server
+		ReadTimeout:  5 * time.Second,   // max time to read request from the client
+		WriteTimeout: 10 * time.Second,  // max time to write response to the client
+		IdleTimeout:  120 * time.Second, // max time for connections using TCP Keep-Alive
 	}
+
+	go func() {
+		l.Println("Starting server on port 9090")
+
+		err := s.ListenAndServe()
+		if err != nil {
+			l.Printf("Error starting server: %s\n", err)
+			os.Exit(1)
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Kill)
+
+	sig := <-c
+	log.Println("Got signal:", sig)
 }
